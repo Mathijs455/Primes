@@ -1,5 +1,5 @@
 ﻿using Microsoft.Spark.Sql;
-using System;
+using static Microsoft.Spark.Sql.Functions;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
@@ -10,40 +10,31 @@ namespace Primes
     {
         static void Main(string[] args)
         {
-            SparkSession
-                .Builder()
-                .AppName("Primes")
-                .GetOrCreate();
+            SparkSession spark =
+               SparkSession
+                   .Builder()
+                   .AppName("word_count_sample")
+                   .GetOrCreate();
 
-            List<int> primes = new List<int>();
-            Stopwatch timer = new Stopwatch();
-            timer.Start();
-            for (int i = 0; i < 10000000; i++)
-            {
-                if (isPrime(i))
-                {
-                    primes.Add(i);
-                }
-            }
+            // Create initial DataFrame
+            string filePath = args[0];
+            DataFrame dataFrame = spark.Read().Text(filePath);
 
-            timer.Stop();
-            TimeSpan ts = timer.Elapsed;
-            Console.WriteLine($"found {primes.Count} prime numbers it took a total of {ts.TotalSeconds} seconds to calculate");
+            //Count words
+            DataFrame words =
+                dataFrame
+                    .Select(Split(Col("value"), " ").Alias("words"))
+                    .Select(Explode(Col("words")).Alias("word"))
+                    .GroupBy("word")
+                    .Count()
+                    .OrderBy(Col("count").Desc());
 
-        }
+            // Display results
+            words.Show();
 
-        static bool isPrime(int n)
-        {
-            // Corner case
-            if (n <= 1)
-                return false;
+            // Stop Spark session
+            spark.Stop();
 
-            // Check from 2 to sqrt(n)
-            for (int i = 2; i < Math.Sqrt(n); i++)
-                if (n % i == 0)
-                    return false;
-
-            return true;
         }
     }
 }
