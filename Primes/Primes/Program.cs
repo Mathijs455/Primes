@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Spark.Sql;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
@@ -9,6 +10,11 @@ namespace Primes
     {
         static void Main(string[] args)
         {
+            SparkSession
+                .Builder()
+                .AppName("Primes")
+                .GetOrCreate();
+
             List<int> primes = new List<int>();
             Stopwatch timer = new Stopwatch();
             timer.Start();
